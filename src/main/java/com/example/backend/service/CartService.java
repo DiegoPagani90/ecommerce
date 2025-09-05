@@ -186,7 +186,7 @@ public class CartService {
     @Transactional(readOnly = true)
     public Optional<Cart> getActiveCart(Long userId) {
         log.info("Recupero carrello attivo per utente: {}", userId);
-        return cartRepository.findByUserIdAndStatus(userId, Cart.CartStatus.OPEN);
+        return cartRepository.findByUserIdAndStatusWithItems(userId, Cart.CartStatus.OPEN);
     }
     
     /**

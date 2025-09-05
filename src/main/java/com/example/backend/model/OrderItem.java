@@ -23,12 +23,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "order_items")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderItem {
@@ -84,5 +86,33 @@ public class OrderItem {
         if (unitPrice != null && quantity != null) {
             this.totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
         }
+    }
+    
+    // Custom equals method using only id to avoid circular references
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OrderItem orderItem = (OrderItem) o;
+        return java.util.Objects.equals(id, orderItem.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "OrderItem{" +
+                "id=" + id +
+                ", productName='" + productName + '\'' +
+                ", sku='" + sku + '\'' +
+                ", quantity=" + quantity +
+                ", unitPrice=" + unitPrice +
+                ", totalPrice=" + totalPrice +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
     }
 }

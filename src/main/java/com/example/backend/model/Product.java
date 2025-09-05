@@ -24,12 +24,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "products")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Product {
@@ -98,4 +100,34 @@ public class Product {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+    
+    // Custom equals method using only id and slug to avoid circular references
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product product = (Product) o;
+        return java.util.Objects.equals(id, product.id) && 
+               java.util.Objects.equals(slug, product.slug);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(id, slug);
+    }
+
+    @Override
+    public String toString() {
+        return "Product{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", slug='" + slug + '\'' +
+                ", sku='" + sku + '\'' +
+                ", price=" + price +
+                ", currency='" + currency + '\'' +
+                ", stockQty=" + stockQty +
+                ", isActive=" + isActive +
+                ", imageUrl='" + imageUrl + '\'' +
+                '}';
+    }
 }

@@ -1,14 +1,16 @@
 package com.example.backend.service;
 
-import com.example.backend.model.User;
-import com.example.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import com.example.backend.model.User;
+import com.example.backend.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +48,7 @@ public class UserService {
      */
     public List<User> getActiveUsers() {
         log.info("Recupero degli utenti attivi dal database");
-        List<User> activeUsers = userRepository.findByIsActiveTrue();
+        List<User> activeUsers = userRepository.findByEnabledTrue();
         log.info("Trovati {} utenti attivi", activeUsers.size());
         return activeUsers;
     }

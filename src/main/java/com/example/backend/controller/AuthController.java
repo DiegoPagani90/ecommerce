@@ -100,27 +100,75 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponseDto>> login(@Valid @RequestBody LoginRequestDto request) {
+        log.info("===== INIZIO LOGIN =====");
         log.info("Tentativo di login per utente: {}", request.getUsername());
+        log.info("Password ricevuta (lunghezza): {}", request.getPassword().length());
         
         try {
-            // Autentica l'utente
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-            );
-            
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            
-            // Trova l'utente
+            // Step 1: Verifica se l'utente esiste
             Optional<User> userOpt = userRepository.findByUsername(request.getUsername());
             if (userOpt.isEmpty()) {
+                log.error("ERRORE: Utente '{}' non trovato nel database", request.getUsername());
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Utente non trovato"));
             }
             
             User user = userOpt.get();
+            log.info("SUCCESS: Utente trovato - ID: {}, Username: {}, Email: {}", 
+                user.getId(), user.getUsername(), user.getEmail());
+            log.info("Utente abilitato: {}", user.getEnabled());
+            log.info("Numero ruoli: {}", user.getRoles().size());
             
-            // Genera il token JWT
-            String token = jwtService.generateToken(user.getUsername());
+            // Step 2: Verifica password manualmente
+            boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+            log.info("Password match result: {}", passwordMatches);
+            String passwordPreview = user.getPassword().length() > 20 ? 
+                user.getPassword().substring(0, 20) + "..." : 
+                user.getPassword();
+            log.info("Password in database: {}", passwordPreview);
+            
+            if (!passwordMatches) {
+                log.error("ERRORE: Password non corrisponde per utente: {}", request.getUsername());
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Password non corretta"));
+            }
+            
+            // Step 3: Tentativo di autenticazione con Spring Security
+            log.info("Tentativo autenticazione con AuthenticationManager...");
+            Authentication authentication;
+            try {
+                authentication = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                );
+                log.info("SUCCESS: Autenticazione riuscita per utente: {}", request.getUsername());
+            } catch (Exception authEx) {
+                log.error("ERRORE nell'autenticazione: {}", authEx.getMessage(), authEx);
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Errore di autenticazione: " + authEx.getMessage()));
+            }
+            
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            
+            // Step 4: Genera token JWT
+            String token;
+            try {
+                token = jwtService.generateToken(user.getUsername());
+                log.info("SUCCESS: Token JWT generato per utente: {}", user.getUsername());
+            } catch (Exception jwtEx) {
+                log.error("ERRORE nella generazione del token: {}", jwtEx.getMessage(), jwtEx);
+                return ResponseEntity.internalServerError()
+                        .body(ApiResponse.error("Errore nella generazione del token"));
+            }
+            
+            // Step 5: Costruisci response
+            Role userRole = user.getRole();
+            String roleName = "USER"; // Ruolo di default per test
+            
+            if (userRole == null) {
+                log.warn("ATTENZIONE: Utente {} non ha ruoli assegnati, usando ruolo di default", user.getUsername());
+            } else {
+                roleName = userRole.getName();
+            }
             
             LoginResponseDto loginResponse = new LoginResponseDto(
                     token,
@@ -129,15 +177,17 @@ public class AuthController {
                     user.getEmail(),
                     user.getFirstName(),
                     user.getLastName(),
-                    user.getRole().getName()
+                    roleName
             );
             
+            log.info("SUCCESS: Login completato per utente: {}", request.getUsername());
+            log.info("===== FINE LOGIN =====");
             return ResponseEntity.ok(ApiResponse.success("Login effettuato con successo", loginResponse));
             
         } catch (Exception e) {
-            log.error("Errore durante il login: {}", e.getMessage());
+            log.error("ERRORE GENERALE durante il login: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Credenziali non valide"));
+                    .body(ApiResponse.error("Errore generale: " + e.getMessage()));
         }
     }
     

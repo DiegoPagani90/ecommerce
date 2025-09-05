@@ -38,7 +38,8 @@ public class ProductController {
         log.info("Richiesta GET /api/products - Recupero di tutti i prodotti attivi");
         
         try {
-            List<Product> products = productService.getActiveProducts();
+            // Usa direttamente il metodo che carica le categorie per evitare lazy loading
+            List<Product> products = productService.getActiveProductsWithCategories();
             
             // Converte i prodotti in DTO per evitare problemi di serializzazione JSON
             List<ProductResponseDto> productDtos = products.stream()

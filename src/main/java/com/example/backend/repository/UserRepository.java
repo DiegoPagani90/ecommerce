@@ -19,14 +19,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
     
     // Query method per trovare utenti attivi
-    List<User> findByIsActiveTrue();
+    List<User> findByEnabledTrue(); //
     
     // Query HQL personalizzata per ottenere tutti gli utenti con i loro ruoli
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles")
     List<User> findAllWithRoles();
     
     // Query HQL per contare utenti attivi
-    @Query("SELECT COUNT(u) FROM User u WHERE u.isActive = true")
+    @Query("SELECT COUNT(u) FROM User u WHERE u.enabled = true")
     Long countActiveUsers();
     
     // Verifica se esiste un utente con l'email specificata
